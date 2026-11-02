@@ -1,0 +1,86 @@
+// =====================================================================
+// ApexPlanet Task 3 – DAX Measures
+// Load Dataset/Cleaned_Sales_Dataset.csv as a table named: Sales
+// Create a blank table called "Measures" and add these measures to it.
+// =====================================================================
+
+// ---------- CORE KPIs ----------
+Total Revenue = SUM ( Sales[Total_Sales] )
+
+Total Orders = COUNTROWS ( Sales )          // Order_ID is not unique, so count rows
+
+Average Order Value = DIVIDE ( [Total Revenue], [Total Orders] )
+
+Units Sold = SUM ( Sales[Quantity] )
+
+Unique Customers = DISTINCTCOUNT ( Sales[Customer_ID] )
+
+Repeat Customers =
+COUNTROWS (
+    FILTER (
+        VALUES ( Sales[Customer_ID] ),
+        CALCULATE ( COUNTROWS ( Sales ) ) > 1
+    )
+)
+
+Repeat Customer Rate = DIVIDE ( [Repeat Customers], [Unique Customers] )
+
+// ---------- MONTH-OVER-MONTH GROWTH ----------
+// Use for the line/column chart (one value per month). Jan 2026 is partial -> blank.
+MoM Growth % =
+VAR cur = MAX ( Sales[Month_Index] )
+VAR prevRev =
+    CALCULATE (
+        [Total Revenue],
+        REMOVEFILTERS ( Sales[Month_Index], Sales[Year_Month], Sales[Month_Num], Sales[Quarter] ),
+        Sales[Month_Index] = cur - 1
+    )
+RETURN
+    IF (
+        MAX ( Sales[Is_Partial_Month] ) = 1 || ISBLANK ( prevRev ),
+        BLANK (),
+        DIVIDE ( [Total Revenue] - prevRev, prevRev )
+    )
+
+// Use for the KPI card: growth of the latest COMPLETE month (Dec 2025) = -2.6%
+MoM Growth % (Latest Full Month) =
+VAR cur =
+    CALCULATE ( MAX ( Sales[Month_Index] ), Sales[Is_Partial_Month] = 0 )
+VAR revCur  = CALCULATE ( [Total Revenue], Sales[Month_Index] = cur )
+VAR revPrev = CALCULATE ( [Total Revenue], Sales[Month_Index] = cur - 1 )
+RETURN
+    DIVIDE ( revCur - revPrev, revPrev )
+
+// ---------- DEEP DIVE: SEGMENTATION ----------
+Revenue Share % =
+DIVIDE ( [Total Revenue], CALCULATE ( [Total Revenue], ALLSELECTED ( Sales ) ) )
+
+Order Share % =
+DIVIDE ( [Total Orders], CALCULATE ( [Total Orders], ALLSELECTED ( Sales ) ) )
+
+Premium Order Rate =
+DIVIDE (
+    CALCULATE ( [Total Orders], Sales[Value_Segment] = "Premium" ),
+    [Total Orders]
+)
+
+High + Premium Revenue Share % =
+DIVIDE (
+    CALCULATE ( [Total Revenue], Sales[Value_Segment] IN { "High", "Premium" } ),
+    [Total Revenue]
+)
+
+AOV vs Overall % =
+VAR overall = CALCULATE ( [Average Order Value], REMOVEFILTERS ( Sales ) )
+RETURN DIVIDE ( [Average Order Value] - overall, overall )
+
+// ---------- OPTIONAL: live segmentation instead of the pre-computed column ----------
+// Calculated column (Sales table). Thresholds = 90th / 66th / 33rd percentile of Total_Sales.
+// Value Segment (DAX) =
+// SWITCH (
+//     TRUE (),
+//     Sales[Total_Sales] >= 311131.5,  "Premium",
+//     Sales[Total_Sales] >= 163053.48, "High",
+//     Sales[Total_Sales] >= 66959.46,  "Medium",
+//     "Low"
+// )

@@ -1,0 +1,14 @@
+{
+  "name": "ApexPlanet Task 3",
+  "dataColors": ["#1F3A5F", "#2A9D8F", "#E9A23B", "#D1495B", "#8D99AE", "#5C7AEA", "#6A994E", "#B56576"],
+  "background": "#FFFFFF",
+  "foreground": "#1F3A5F",
+  "tableAccent": "#2A9D8F",
+  "good": "#2A9D8F",
+  "neutral": "#E9A23B",
+  "bad": "#D1495B",
+  "textClasses": {
+    "title": { "fontFace": "Segoe UI Semibold", "fontSize": 14, "color": "#1F3A5F" },
+    "label": { "fontFace": "Segoe UI", "fontSize": 10, "color": "#4A5568" }
+  }
+}
